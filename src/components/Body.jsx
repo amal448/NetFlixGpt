@@ -1,10 +1,11 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import Login from './Login'
 import Browse from './Browse'
 import { createBrowserRouter,RouterProvider } from 'react-router'
 // import ReactDOM from 'react-dom/client'
 
 const Body = () => {
+
 
 const appRouter =createBrowserRouter([
     {

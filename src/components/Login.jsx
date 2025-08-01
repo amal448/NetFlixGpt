@@ -1,11 +1,18 @@
 import React, { useState, useRef } from 'react'
 import Header from './Header'
 import { checkValidateData } from '../utils/validate'
+import { createUserWithEmailAndPassword ,signInWithEmailAndPassword  } from "firebase/auth";
+import { auth } from '../utils/firebase';
+import {  updateProfile } from "firebase/auth";
+import { useDispatch } from 'react-redux';
+import { addUser } from '../utils/userSlice';
+import { PROFILE } from '../utils/constants';
 
 const Login = () => {
 
     const [isSignInForm, setIsSignInForm] = useState(true)
     const [error, setError] = useState()
+    const dispatch=useDispatch()
 
     const name = useRef(null)
     const email = useRef(null)
@@ -18,12 +25,54 @@ const Login = () => {
 
 
     const handleButtonClick = () => {
-        // console.log(email.current.value, password.current.value,name.current.value||null);
-
-        const message =isSignInForm?checkValidateData(email.current.value, password.current.value,isSignInForm ): checkValidateData(email.current.value, password.current.value,name.current.value,isSignInForm )
-        
-        console.log(message);
+        const message = isSignInForm ? checkValidateData(email.current.value, password.current.value, isSignInForm) : checkValidateData(email.current.value, password.current.value, name.current.value, isSignInForm)
         setError(message)
+        if (message) return
+
+        if (!isSignInForm) {
+            //sign up or register
+
+            createUserWithEmailAndPassword(auth, email.current.value, password.current.value)
+                .then((userCredential) => {
+                    // Signed up 
+                    const user = userCredential.user;
+                    
+                    updateProfile(user, {
+                        displayName: name.current.value, photoURL:{PROFILE}
+                      }).then(() => {
+                            const {uid,email,displayName,photoURL}=auth.currentUser
+                        // Profile updated!
+                        dispatch(addUser({uid:uid ,email:email,displayName:displayName,photoURL:photoURL}))
+                        // ...
+                      }).catch((error) => {
+                        // An error occurred
+                        setError(error)
+                        // ...
+                      });
+                    
+                    
+                })
+                .catch((error) => {
+                    const errorCode = error.code;
+                    const errorMessage = error.message;
+                    
+                    setError(errorMessage)
+                    // ..
+                });
+
+        }
+        if (isSignInForm) {
+            signInWithEmailAndPassword(auth,email.current.value, password.current.value)
+                .then((userCredential) => {
+                    // Signed in 
+                    const user = userCredential.user;
+                })
+                .catch((error) => {
+                    const errorCode = error.code;
+                    const errorMessage = error.message;
+                    setError(errorMessage)
+                });
+        }
 
     }
     return (
@@ -31,7 +80,7 @@ const Login = () => {
             <div className=''>
                 <Header />
                 <div className='absolute'>
-                    <img src="https://assets.nflxext.com/ffe/siteui/vlv3/258d0f77-2241-4282-b613-8354a7675d1a/web/IN-en-20250721-TRIFECTA-perspective_cadc8408-df6e-4313-a05d-daa9dcac139f_large.jpg" alt="" />
+                    <img src={PROFILE} alt="" />
                 </div>
 
                 <form onSubmit={(e) => e.preventDefault()} className='absolute opacity-80 left-0 right-0 my-36 w-3/12 mx-auto bg-black bg-opacity-70 p-8 rounded-lg' action="">
